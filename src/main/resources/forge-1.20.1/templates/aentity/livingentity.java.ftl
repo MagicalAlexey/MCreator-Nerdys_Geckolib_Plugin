@@ -60,7 +60,7 @@ import software.bernie.geckolib.core.animation.AnimationState;
 </#if>
 
 <#if (data.tameable && data.breedable)>
-	<#assign extendsClass = "TamableAnimal">
+	<#assign extendsClass = data.tameable?then("TamableAnimal", "Animal")>
 </#if>
 
 public class ${name}Entity extends ${extendsClass} <#if data.ranged>implements RangedAttackMob, GeoEntity</#if><#if !data.ranged>implements GeoEntity</#if> {
@@ -699,7 +699,7 @@ public class ${name}Entity extends ${extendsClass} <#if data.ranged>implements R
 			"z": "this.getZ()",
 			"entity": "this",
 			"sourceentity": "sourceentity",
-			"world": "this.level()"
+			"world": "this.level"
 		}/>
 	}
     </#if>
@@ -716,7 +716,7 @@ public class ${name}Entity extends ${extendsClass} <#if data.ranged>implements R
 				double d1 = target.getX() - this.getX();
 				double d3 = target.getZ() - this.getZ();
 				entityarrow.shoot(d1, d0 - entityarrow.getY() + Math.sqrt(d1 * d1 + d3 * d3) * 0.2F, d3, 1.6F, 12.0F);
-				this.level().addFreshEntity(entityarrow);
+				level().addFreshEntity(entityarrow);
 			<#else>
 				${data.rangedItemType}Entity.shoot(this, target);
 			</#if>
@@ -867,7 +867,7 @@ public class ${name}Entity extends ${extendsClass} <#if data.ranged>implements R
 					}
 				<#else>
 					(entityType, world, reason, pos, random) ->
-							(world.getBlockState(pos.below()).getMaterial() == Material.GRASS && world.getRawBrightness(pos, 0) > 8)
+							(world.getBlockState(pos.below()).is(BlockTags.DIRT) && world.getRawBrightness(pos, 0) > 8)
 				</#if>
 			);
 			<#elseif data.mobSpawningType == "ambient" || data.mobSpawningType == "misc">
@@ -974,7 +974,7 @@ public class ${name}Entity extends ${extendsClass} <#if data.ranged>implements R
 	      if (this.animationprocedure.equals("empty")) {
 		<#if data.enable2>
 		if ((event.isMoving() || !(event.getLimbSwingAmount() > -0.15F && event.getLimbSwingAmount() < 0.15F))
-		<#if data.enable8>&& this.isOnGround()</#if> <#if data.enable9>&& !this.isVehicle()</#if>
+		<#if data.enable8>&& this.isFallFlying()</#if> <#if data.enable9>&& !this.isVehicle()</#if>
 		<#if data.enable10>&& !this.isAggressive()</#if>) {
 			return event.setAndContinue(RawAnimation.begin().thenLoop("${data.animation2}"));
 		}
@@ -1000,7 +1000,7 @@ public class ${name}Entity extends ${extendsClass} <#if data.ranged>implements R
 		}
 		</#if>
 		<#if data.enable8>
-		if (!this.isOnGround()) {
+		if (!this.isFallFlying()) {
 			return event.setAndContinue(RawAnimation.begin().thenLoop("${data.animation8}"));
 		}
 		</#if>
@@ -1026,9 +1026,9 @@ public class ${name}Entity extends ${extendsClass} <#if data.ranged>implements R
 		float velocity = (float) Math.sqrt(d1 * d1 + d0 * d0);
 		if (getAttackAnim(event.getPartialTick()) > 0f && !this.swinging) {
 			this.swinging = true;
-			this.lastSwing = level.getGameTime();
+			this.lastSwing = level().getGameTime();
 		}
-		if (this.swinging && this.lastSwing + 7L <= level.getGameTime()) {
+		if (this.swinging && this.lastSwing + 7L <= level().getGameTime()) {
 			this.swinging = false;
 		}
 		if (<#if data.ranged>(</#if>this.swinging<#if data.ranged> || this.entityData.get(SHOOT))</#if>
