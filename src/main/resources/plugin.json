@@ -1,6 +1,6 @@
 {
   "id": "geckolib_plugin",
-  "minversion": 202300217118,
+  "minversion": 202300400000,
   "weight": 3001,
   "javaplugin": "net.nerdypuzzle.geckolib.Launcher",
   "info": {
