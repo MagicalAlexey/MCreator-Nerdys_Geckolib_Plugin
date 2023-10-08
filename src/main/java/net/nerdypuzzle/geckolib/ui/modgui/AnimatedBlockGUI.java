@@ -137,7 +137,6 @@ public class AnimatedBlockGUI extends ModElementGUI<AnimatedBlock> implements Ge
     private final JSpinner frequencyOnChunk;
     private BiomeListField restrictionBiomes;
     private MCItemListField blocksToReplace;
-    private DimensionListField spawnWorldTypes;
     private final JCheckBox plantsGrowOn;
     private final JCheckBox isLadder;
     private final JComboBox<String> reactionToPushing;
@@ -274,7 +273,6 @@ public class AnimatedBlockGUI extends ModElementGUI<AnimatedBlock> implements Ge
         this.destroyTool.setRenderer(new ItemTexturesComboBoxRenderer());
         this.blocksToReplace = new MCItemListField(this.mcreator, ElementUtil::loadBlocks);
         this.restrictionBiomes = new BiomeListField(this.mcreator);
-        this.spawnWorldTypes = new DimensionListField(this.mcreator);
         this.fluidRestrictions = new FluidListField(this.mcreator);
         boundingBoxList = new JBoundingBoxList(mcreator, this, null);
         this.blocksToReplace.setListElements(new ArrayList(Collections.singleton(new MItemBlock(this.mcreator.getWorkspace(), "Blocks.STONE"))));
@@ -499,7 +497,6 @@ public class AnimatedBlockGUI extends ModElementGUI<AnimatedBlock> implements Ge
         bbPane.setOpaque(false);
         bbPane.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         if (!this.isEditingMode()) {
-            this.boundingBoxList.setBoundingBoxes(Collections.singletonList(new IBlockWithBoundingBox.BoxEntry()));
             this.animationCount.setValue(1);
         }
 
@@ -767,8 +764,6 @@ public class AnimatedBlockGUI extends ModElementGUI<AnimatedBlock> implements Ge
         pane8.add("Center", PanelUtils.totalCenterInPanel(invblock));
         JPanel enderpanel2 = new JPanel(new BorderLayout(30, 15));
         JPanel genPanel = new JPanel(new GridLayout(8, 2, 20, 2));
-        genPanel.add(HelpUtils.wrapWithHelpButton(this.withEntry("common/spawn_world_types"), L10N.label("elementgui.block.spawn_world_types", new Object[0])));
-        genPanel.add(this.spawnWorldTypes);
         genPanel.add(HelpUtils.wrapWithHelpButton(this.withEntry("block/gen_replace_blocks"), L10N.label("elementgui.block.gen_replace_blocks", new Object[0])));
         genPanel.add(this.blocksToReplace);
         genPanel.add(HelpUtils.wrapWithHelpButton(this.withEntry("common/restrict_to_biomes"), L10N.label("elementgui.common.restrict_to_biomes", new Object[0])));
@@ -1083,7 +1078,6 @@ public class AnimatedBlockGUI extends ModElementGUI<AnimatedBlock> implements Ge
         this.inventorySize.setValue(block.inventorySize);
         this.inventoryStackSize.setValue(block.inventoryStackSize);
         this.tickRate.setValue(block.tickRate);
-        this.spawnWorldTypes.setListElements(block.spawnWorldTypes);
         this.blocksToReplace.setListElements(block.blocksToReplace);
         this.restrictionBiomes.setListElements(block.restrictionBiomes);
         this.fluidRestrictions.setListElements(block.fluidRestrictions);
@@ -1105,7 +1099,6 @@ public class AnimatedBlockGUI extends ModElementGUI<AnimatedBlock> implements Ge
         this.geoModel.setSelectedItem(block.normal);
         this.displaySettings.setSelectedItem(block.displaySettings);
         this.disableOffset.setSelected(block.disableOffset);
-        this.boundingBoxList.setBoundingBoxes(block.boundingBoxes);
         this.specialInfo.setText((String)block.specialInfo.stream().map((info) -> {
             return info.replace(",", "\\,");
         }).collect(Collectors.joining(",")));
@@ -1229,9 +1222,7 @@ public class AnimatedBlockGUI extends ModElementGUI<AnimatedBlock> implements Ge
         block.textureRight = this.textureRight.getID();
         block.textureBack = this.textureBack.getID();
         block.disableOffset = this.disableOffset.isSelected();
-        block.boundingBoxes = this.boundingBoxList.getBoundingBoxes();
         block.beaconColorModifier = this.beaconColorModifier.getColor();
-        block.spawnWorldTypes = this.spawnWorldTypes.getListElements();
         block.restrictionBiomes = this.restrictionBiomes.getListElements();
         block.fluidRestrictions = this.fluidRestrictions.getListElements();
         block.blocksToReplace = this.blocksToReplace.getListElements();
@@ -1249,7 +1240,6 @@ public class AnimatedBlockGUI extends ModElementGUI<AnimatedBlock> implements Ge
         block.slipperiness = (Double)this.slipperiness.getValue();
         block.speedFactor = (Double)this.speedFactor.getValue();
         block.jumpFactor = (Double)this.jumpFactor.getValue();
-        block.specialInfo = StringUtils.splitCommaSeparatedStringListWithEscapes(this.specialInfo.getText());
         block.normal = (String)this.geoModel.getSelectedItem();
         block.displaySettings = (String)this.displaySettings.getSelectedItem();
         if (this.blockBase.getSelectedIndex() != 0) {

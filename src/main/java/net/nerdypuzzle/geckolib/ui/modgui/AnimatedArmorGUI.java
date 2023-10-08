@@ -775,10 +775,6 @@ public class AnimatedArmorGUI extends ModElementGUI<AnimatedArmor> implements Ge
         armor.bootsName = bootsName.getText();
         armor.equipSound = equipSound.getSound();
         armor.repairItems = repairItems.getListElements();
-        armor.helmetSpecialInfo = StringUtils.splitCommaSeparatedStringListWithEscapes(helmetSpecialInfo.getText());
-        armor.bodySpecialInfo = StringUtils.splitCommaSeparatedStringListWithEscapes(bodySpecialInfo.getText());
-        armor.leggingsSpecialInfo = StringUtils.splitCommaSeparatedStringListWithEscapes(leggingsSpecialInfo.getText());
-        armor.bootsSpecialInfo = StringUtils.splitCommaSeparatedStringListWithEscapes(bootsSpecialInfo.getText());
         armor.helmetImmuneToFire = helmetImmuneToFire.isSelected();
         armor.bodyImmuneToFire = bodyImmuneToFire.isSelected();
         armor.leggingsImmuneToFire = leggingsImmuneToFire.isSelected();

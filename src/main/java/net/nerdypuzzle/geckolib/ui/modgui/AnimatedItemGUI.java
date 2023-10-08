@@ -518,7 +518,6 @@ public class AnimatedItemGUI extends ModElementGUI<AnimatedItem> implements Geck
         item.animation = (String)this.animation.getSelectedItem();
         item.onFinishUsingItem = this.onFinishUsingItem.getSelectedProcedure();
         item.eatResultItem = this.eatResultItem.getBlock();
-        item.specialInfo = StringUtils.splitCommaSeparatedStringListWithEscapes(this.specialInfo.getText());
         item.texture = this.texture.getID();
         item.renderType = 0;
         item.normal = (String)this.geoModel.getSelectedItem();

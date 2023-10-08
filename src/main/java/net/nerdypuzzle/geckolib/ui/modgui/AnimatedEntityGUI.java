@@ -1102,7 +1102,7 @@ public class AnimatedEntityGUI extends ModElementGUI<AnimatedEntity> implements 
 
         ComboBoxUtil.updateComboBoxContents(rangedItemType, ListUtils.merge(Collections.singleton("Default item"),
                 mcreator.getWorkspace().getModElements().stream()
-                        .filter(var -> var.getType() == ModElementType.RANGEDITEM).map(ModElement::getName)
+                        .filter(var -> var.getType() == ModElementType.PROJECTILE).map(ModElement::getName)
                         .collect(Collectors.toList())), "Default item");
 
         ComboBoxUtil.updateComboBoxContents(guiBoundTo, ListUtils.merge(Collections.singleton("<NONE>"),
