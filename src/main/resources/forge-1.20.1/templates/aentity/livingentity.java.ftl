@@ -60,7 +60,7 @@ import software.bernie.geckolib.core.animation.AnimationState;
 </#if>
 
 <#if (data.tameable && data.breedable)>
-	<#assign extendsClass = data.tameable?then("TamableAnimal", "Animal")>
+	<#assign extendsClass = "TamableAnimal">
 </#if>
 
 public class ${name}Entity extends ${extendsClass} <#if data.ranged>implements RangedAttackMob, GeoEntity</#if><#if !data.ranged>implements GeoEntity</#if> {
@@ -348,25 +348,29 @@ public class ${name}Entity extends ${extendsClass} <#if data.ranged>implements R
    	}
 	</#if>
 
-   	<#if data.livingSound.getMappedValue()?has_content>
+   	<#if data.livingSound?has_content>
 	@Override public SoundEvent getAmbientSound() {
-		return ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("${data.livingSound}"));
+		return ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("${data.livingSound.getUnmappedValue()}"));
 	}
 	</#if>
 
-   	<#if data.stepSound?has_content && data.stepSound.getMappedValue()?has_content>
+   	<#if data.stepSound?has_content>
 	@Override public void playStepSound(BlockPos pos, BlockState blockIn) {
-		this.playSound(ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("${data.stepSound}")), 0.15f, 1);
+		this.playSound(ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("${data.stepSound.getUnmappedValue()}")), 0.15f, 1);
 	}
 	</#if>
 
+	<#if data.hurtSound?has_content>
 	@Override public SoundEvent getHurtSound(DamageSource ds) {
-		return ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("${data.hurtSound}"));
+		return ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("${data.hurtSound.getUnmappedValue()}"));
 	}
+	</#if>
 
+	<#if data.deathSound?has_content>
 	@Override public SoundEvent getDeathSound() {
-		return ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("${data.deathSound}"));
+		return ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("${data.deathSound.getUnmappedValue()}"));
 	}
+	</#if>
 
 	<#if hasProcedure(data.onStruckByLightning)>
 	@Override public void thunderHit(ServerLevel serverWorld, LightningBolt lightningBolt) {
@@ -699,7 +703,7 @@ public class ${name}Entity extends ${extendsClass} <#if data.ranged>implements R
 			"z": "this.getZ()",
 			"entity": "this",
 			"sourceentity": "sourceentity",
-			"world": "this.level"
+			"world": "this.level()"
 		}/>
 	}
     </#if>
@@ -716,7 +720,7 @@ public class ${name}Entity extends ${extendsClass} <#if data.ranged>implements R
 				double d1 = target.getX() - this.getX();
 				double d3 = target.getZ() - this.getZ();
 				entityarrow.shoot(d1, d0 - entityarrow.getY() + Math.sqrt(d1 * d1 + d3 * d3) * 0.2F, d3, 1.6F, 12.0F);
-				level().addFreshEntity(entityarrow);
+				this.level().addFreshEntity(entityarrow);
 			<#else>
 				${data.rangedItemType}Entity.shoot(this, target);
 			</#if>
@@ -793,7 +797,7 @@ public class ${name}Entity extends ${extendsClass} <#if data.ranged>implements R
 				this.setRot(this.getYRot(), this.getXRot());
 				this.yBodyRot = entity.getYRot();
 				this.yHeadRot = entity.getYRot();
-				this.maxUpStep = 1.0F;
+				this.setMaxUpStep(1.0F);
 
 				if (entity instanceof LivingEntity passenger) {
 					this.setSpeed((float) this.getAttributeValue(Attributes.MOVEMENT_SPEED));
@@ -822,7 +826,7 @@ public class ${name}Entity extends ${extendsClass} <#if data.ranged>implements R
 				this.calculateEntityAnimation(true);
 				return;
 			}
-			this.maxUpStep = 0.5F;
+			this.setMaxUpStep(0.5F);
 			</#if>
 
 			super.travel(dir);
@@ -867,7 +871,7 @@ public class ${name}Entity extends ${extendsClass} <#if data.ranged>implements R
 					}
 				<#else>
 					(entityType, world, reason, pos, random) ->
-							(world.getBlockState(pos.below()).is(BlockTags.DIRT) && world.getRawBrightness(pos, 0) > 8)
+							(world.getBlockState(pos.below()).is(BlockTags.ANIMALS_SPAWNABLE_ON) && world.getRawBrightness(pos, 0) > 8)
 				</#if>
 			);
 			<#elseif data.mobSpawningType == "ambient" || data.mobSpawningType == "misc">
@@ -974,7 +978,7 @@ public class ${name}Entity extends ${extendsClass} <#if data.ranged>implements R
 	      if (this.animationprocedure.equals("empty")) {
 		<#if data.enable2>
 		if ((event.isMoving() || !(event.getLimbSwingAmount() > -0.15F && event.getLimbSwingAmount() < 0.15F))
-		<#if data.enable8>&& this.isFallFlying()</#if> <#if data.enable9>&& !this.isVehicle()</#if>
+		<#if data.enable8>&& this.onGround()</#if> <#if data.enable9>&& !this.isVehicle()</#if>
 		<#if data.enable10>&& !this.isAggressive()</#if>) {
 			return event.setAndContinue(RawAnimation.begin().thenLoop("${data.animation2}"));
 		}
@@ -1000,7 +1004,7 @@ public class ${name}Entity extends ${extendsClass} <#if data.ranged>implements R
 		}
 		</#if>
 		<#if data.enable8>
-		if (!this.isFallFlying()) {
+		if (!this.onGround()) {
 			return event.setAndContinue(RawAnimation.begin().thenLoop("${data.animation8}"));
 		}
 		</#if>
