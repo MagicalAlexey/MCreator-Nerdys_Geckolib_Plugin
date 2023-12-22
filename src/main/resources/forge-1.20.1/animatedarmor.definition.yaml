@@ -10,7 +10,7 @@ templates:
   - template: aarmor/armor_renderer.java.ftl
     name: "@SRCROOT/@BASEPACKAGEPATH/client/renderer/@NAMEArmorRenderer.java"
 
-# Helmet item model
+  # Helmet item model
   - template: ajson/armor/item.json.ftl
     writer: json
     variables: "item=helmet"
@@ -40,7 +40,7 @@ templates:
     variables: "item=helmet"
     name: "@MODASSETSROOT/models/item/@registryname_helmet.json"
 
-# Body item model
+  # Body item model
   - template: ajson/armor/item.json.ftl
     writer: json
     variables: "item=body"
@@ -70,7 +70,7 @@ templates:
     variables: "item=body"
     name: "@MODASSETSROOT/models/item/@registryname_chestplate.json"
 
-# Leggings item model
+  # Leggings item model
   - template: ajson/armor/item.json.ftl
     writer: json
     variables: "item=leggings"
@@ -100,7 +100,7 @@ templates:
     variables: "item=leggings"
     name: "@MODASSETSROOT/models/item/@registryname_leggings.json"
 
-# Boots item model
+  # Boots item model
   - template: ajson/armor/item.json.ftl
     writer: json
     variables: "item=boots"
