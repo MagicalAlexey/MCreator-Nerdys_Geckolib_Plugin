@@ -30,6 +30,7 @@ import net.mcreator.ui.init.L10N;
 import net.mcreator.ui.init.UIRES;
 import net.mcreator.ui.laf.renderer.WTextureComboBoxRenderer;
 import net.mcreator.ui.minecraft.*;
+import net.mcreator.ui.minecraft.states.entity.JEntityDataList;
 import net.mcreator.ui.modgui.IBlocklyPanelHolder;
 import net.mcreator.ui.modgui.ModElementGUI;
 import net.mcreator.ui.procedure.AbstractProcedureSelector;
@@ -159,6 +160,7 @@ public class AnimatedEntityGUI extends ModElementGUI<AnimatedEntity> implements 
     private final VComboBox<String> mobModelTexture = new SearchableComboBox<>();
     private final VComboBox<String> mobModelGlowTexture = new SearchableComboBox<>();
 
+    private JEntityDataList entityDataList;
     private static final BlocklyCompileNote aiUnmodifiableCompileNote = new BlocklyCompileNote(
             BlocklyCompileNote.Type.INFO, L10N.t("blockly.warnings.unmodifiable_ai_bases"));
 
@@ -228,8 +230,6 @@ public class AnimatedEntityGUI extends ModElementGUI<AnimatedEntity> implements 
     private final JCheckBox enable10 = L10N.checkbox("elementgui.common.enable", new Object[0]);
 
     private ProcedureSelector finishedDying;
-    private ProcedureSelector conditionalAnimation;
-    private ProcedureSelector loop;
 
     private final JCheckBox headMovement = L10N.checkbox("elementgui.common.enable", new Object[0]);
     private final JCheckBox eyeHeight = L10N.checkbox("elementgui.animatedentity.eye_height");
@@ -339,19 +339,11 @@ public class AnimatedEntityGUI extends ModElementGUI<AnimatedEntity> implements 
                 VariableTypeLoader.BuiltInTypes.LOGIC,
                 Dependency.fromString("x:number/y:number/z:number/world:world/entity:entity")).setDefaultName(
                 L10N.t("condition.common.false")).makeInline();
-        conditionalAnimation = new ProcedureSelector(this.withEntry("geckolib/conditional_animation"), mcreator,
-                L10N.t("elementgui.animatedentity.conditional_animation"),
-                VariableTypeLoader.BuiltInTypes.STRING,
-                Dependency.fromString("x:number/y:number/z:number/world:world/entity:entity")).setDefaultName(
-                L10N.t("condition.common.false")).makeInline();
-        loop = new ProcedureSelector(this.withEntry("geckolib/loop_animation"), mcreator,
-                L10N.t("elementgui.animatedentity.loop_animation"),
-                VariableTypeLoader.BuiltInTypes.LOGIC,
-                Dependency.fromString("x:number/y:number/z:number/world:world/entity:entity")).setDefaultName(
-                L10N.t("condition.common.false")).makeInline();
 
         restrictionBiomes = new BiomeListField(mcreator);
         breedTriggerItems = new MCItemListField(mcreator, ElementUtil::loadBlocksAndItems);
+
+        entityDataList = new JEntityDataList(mcreator, this);
 
         mobModelTexture.setRenderer(
                 new WTextureComboBoxRenderer.TypeTextures(mcreator.getWorkspace(), TextureType.ENTITY));
@@ -490,6 +482,15 @@ public class AnimatedEntityGUI extends ModElementGUI<AnimatedEntity> implements 
                         immuneToAnvil, immuneToTrident, immuneToDragonBreath, immuneToWither));
 
         pane1.add("Center", PanelUtils.totalCenterInPanel(PanelUtils.northAndCenterElement(subpane1, subpanel2)));
+
+        JPanel entityDataListPanel = new JPanel(new GridLayout());
+
+        JComponent entityDataListComp = PanelUtils.northAndCenterElement(
+                HelpUtils.wrapWithHelpButton(this.withEntry("entity/entity_data"),
+                        L10N.label("elementgui.living_entity.entity_data")), entityDataList);
+        entityDataListPanel.setOpaque(false);
+        entityDataListComp.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        entityDataListPanel.add(entityDataListComp);
 
         JPanel spo2 = new JPanel(new GridLayout(15, 2, 2, 2));
 
@@ -956,8 +957,8 @@ public class AnimatedEntityGUI extends ModElementGUI<AnimatedEntity> implements 
 
         JPanel extras_condition = new JPanel(new GridLayout(2, 1, 10, 2));
 
-        extras_condition.add(conditionalAnimation);
-        extras_condition.add(loop);
+        // empty panel where the procedure selectors were
+
         extras.add(PanelUtils.centerInPanel(extras_condition));
 
         //merge the right side panels
@@ -1001,6 +1002,7 @@ public class AnimatedEntityGUI extends ModElementGUI<AnimatedEntity> implements 
 
         addPage(L10N.t("elementgui.living_entity.page_visual_and_sound"), pane2);
         addPage(L10N.t("elementgui.living_entity.page_behaviour"), pane1);
+        addPage(L10N.t("elementgui.living_entity.page_entity_data"), entityDataListPanel);
         addPage(L10N.t("elementgui.common.page_inventory"), pane7);
         addPage(L10N.t("elementgui.common.page_triggers"), pane4);
         addPage(L10N.t("elementgui.living_entity.page_ai_and_goals"), pane3);
@@ -1088,8 +1090,6 @@ public class AnimatedEntityGUI extends ModElementGUI<AnimatedEntity> implements 
         visualScale.refreshListKeepSelected();
         boundingBoxScale.refreshListKeepSelected();
         solidBoundingBox.refreshListKeepSelected();
-        conditionalAnimation.refreshListKeepSelected();
-        loop.refreshListKeepSelected();
 
         ComboBoxUtil.updateComboBoxContents(mobModelTexture, ListUtils.merge(Collections.singleton(""),
                 mcreator.getFolderManager().getTexturesList(TextureType.ENTITY).stream().map(File::getName)
@@ -1104,7 +1104,7 @@ public class AnimatedEntityGUI extends ModElementGUI<AnimatedEntity> implements 
 
         ComboBoxUtil.updateComboBoxContents(rangedItemType, ListUtils.merge(Collections.singleton("Default item"),
                 mcreator.getWorkspace().getModElements().stream()
-                        .filter(var -> var.getType() == ModElementType.ITEM && ((Item)var.getGeneratableElement()).enableRanged).map(ModElement::getName)
+                        .filter(var -> var.getType() == ModElementType.PROJECTILE).map(ModElement::getName)
                         .collect(Collectors.toList())), "Default item");
 
         ComboBoxUtil.updateComboBoxContents(guiBoundTo, ListUtils.merge(Collections.singleton("<NONE>"),
@@ -1163,9 +1163,7 @@ public class AnimatedEntityGUI extends ModElementGUI<AnimatedEntity> implements 
         finishedDying.setSelectedProcedure(livingEntity.finishedDying);
         headMovement.setSelected(livingEntity.headMovement);
         groupName.setText(livingEntity.groupName);
-        conditionalAnimation.setSelectedProcedure(livingEntity.conditionalAnimation);
         lerp.setValue(livingEntity.lerp);
-        loop.setSelectedProcedure(livingEntity.loop);
         eyeHeight.setSelected(livingEntity.eyeHeight);
         height.setValue(livingEntity.height);
         mobName.setText(livingEntity.mobName);
@@ -1257,6 +1255,7 @@ public class AnimatedEntityGUI extends ModElementGUI<AnimatedEntity> implements 
         guiBoundTo.setSelectedItem(livingEntity.guiBoundTo);
         inventorySize.setValue(livingEntity.inventorySize);
         inventoryStackSize.setValue(livingEntity.inventoryStackSize);
+        entityDataList.setEntries(livingEntity.entityDataEntries);
 
         if (livingEntity.creativeTab != null)
             creativeTab.setSelectedItem(livingEntity.creativeTab);
@@ -1331,9 +1330,7 @@ public class AnimatedEntityGUI extends ModElementGUI<AnimatedEntity> implements 
         livingEntity.finishedDying = finishedDying.getSelectedProcedure();
         livingEntity.headMovement = headMovement.isSelected();
         livingEntity.groupName = groupName.getText();
-        livingEntity.conditionalAnimation = conditionalAnimation.getSelectedProcedure();
         livingEntity.lerp = (int) lerp.getValue();
-        livingEntity.loop = loop.getSelectedProcedure();
         livingEntity.eyeHeight = eyeHeight.isSelected();
         livingEntity.height = (double) height.getValue();
         livingEntity.mobName = mobName.getText();
@@ -1427,6 +1424,7 @@ public class AnimatedEntityGUI extends ModElementGUI<AnimatedEntity> implements 
         livingEntity.inventorySize = (int) inventorySize.getValue();
         livingEntity.inventoryStackSize = (int) inventoryStackSize.getValue();
         livingEntity.guiBoundTo = (String) guiBoundTo.getSelectedItem();
+        livingEntity.entityDataEntries = entityDataList.getEntries();
         return livingEntity;
     }
 

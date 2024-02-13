@@ -82,6 +82,34 @@ public class ${name}Item extends Item implements GeoItem {
 			public BlockEntityWithoutLevelRenderer getCustomRenderer() {
 				return renderer;
 			}
+
+            <#if data.enableArmPose>
+	    	private static final HumanoidModel.ArmPose ${name}Pose = HumanoidModel.ArmPose.create("${name}", false, (model, entity, arm) -> {
+	            if (arm == HumanoidArm.LEFT) {
+	                <#list data.armPoseList as pose>
+	                    <#if pose.armHeld == "LEFT">
+	                        model.${pose.arm?lower_case}Arm.${pose.angle?lower_case}Rot = <#if pose.swings>model.${pose.arm?lower_case}Arm.${pose.angle?lower_case}Rot +</#if> ${pose.rotation}F<#if pose.followsHead> + model.head.${pose.angle?lower_case}Rot</#if>;
+	                    </#if>
+	                </#list>
+	            } else {
+	                <#list data.armPoseList as pose>
+	                    <#if pose.armHeld == "RIGHT">
+	                        model.${pose.arm?lower_case}Arm.${pose.angle?lower_case}Rot = <#if pose.swings>model.${pose.arm?lower_case}Arm.${pose.angle?lower_case}Rot +</#if> ${pose.rotation}F<#if pose.followsHead> + model.head.${pose.angle?lower_case}Rot</#if>;
+	                    </#if>
+	                </#list>
+	            }
+        	});
+
+	        @Override
+	        public HumanoidModel.ArmPose getArmPose(LivingEntity entityLiving, InteractionHand hand, ItemStack itemStack) {
+	            if (!itemStack.isEmpty()) {
+	                if (entityLiving.getUsedItemHand() == hand) {
+	                    return ${name}Pose;
+	                }
+	            }
+	            return HumanoidModel.ArmPose.EMPTY;
+	        }
+        	</#if>
 		});
 	}
 
@@ -101,7 +129,7 @@ public class ${name}Item extends Item implements GeoItem {
 		: false) {
 		if (this.animationprocedure.equals("empty")) {
 			event.getController().setAnimation(RawAnimation.begin().thenLoop("${data.idle}"));
-		return PlayState.CONTINUE;
+		    return PlayState.CONTINUE;
 		}
 	}
         return PlayState.STOP;
@@ -117,13 +145,15 @@ public class ${name}Item extends Item implements GeoItem {
 		!this.transformType.firstPerson()
 		</#if>
 		: false) {
-		if (!(this.animationprocedure.equals("empty")) && event.getController().getAnimationState() == AnimationController.State.STOPPED) {
+		if (!this.animationprocedure.equals("empty") && event.getController().getAnimationState() == AnimationController.State.STOPPED) {
 			event.getController().setAnimation(RawAnimation.begin().thenPlay(this.animationprocedure));
 	        if (event.getController().getAnimationState() == AnimationController.State.STOPPED) {
-			this.animationprocedure = "empty";
-			event.getController().forceAnimationReset();
-				}
-			}	
+			    this.animationprocedure = "empty";
+			    event.getController().forceAnimationReset();
+			}
+		} else if (this.animationprocedure.equals("empty")) {
+		    return PlayState.STOP;
+		}
 		}  
 		return PlayState.CONTINUE;
 	}

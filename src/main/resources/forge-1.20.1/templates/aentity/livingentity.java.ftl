@@ -70,6 +70,17 @@ public class ${name}Entity extends ${extendsClass} <#if data.ranged>implements R
       ${name}Entity.class, EntityDataSerializers.STRING);
     public static final EntityDataAccessor<String> TEXTURE = SynchedEntityData.defineId(
       ${name}Entity.class, EntityDataSerializers.STRING);
+
+	<#list data.entityDataEntries as entry>
+		<#if entry.value().getClass().getSimpleName() == "Integer">
+			public static final EntityDataAccessor<Integer> DATA_${entry.property().getName()} = SynchedEntityData.defineId(${name}Entity.class, EntityDataSerializers.INT);
+		<#elseif entry.value().getClass().getSimpleName() == "Boolean">
+			public static final EntityDataAccessor<Boolean> DATA_${entry.property().getName()} = SynchedEntityData.defineId(${name}Entity.class, EntityDataSerializers.BOOLEAN);
+		<#elseif entry.value().getClass().getSimpleName() == "String">
+			public static final EntityDataAccessor<String> DATA_${entry.property().getName()} = SynchedEntityData.defineId(${name}Entity.class, EntityDataSerializers.STRING);
+		</#if>
+	</#list>
+
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 	private boolean swinging;
 	private boolean lastloop;
@@ -167,6 +178,11 @@ public class ${name}Entity extends ${extendsClass} <#if data.ranged>implements R
 		this.entityData.define(SHOOT, false);
 		this.entityData.define(ANIMATION, "undefined");
 		this.entityData.define(TEXTURE, "${data.mobModelTexture?replace(".png", "")}");
+		<#if data.entityDataEntries?has_content>
+		    <#list data.entityDataEntries as entry>
+			    this.entityData.define(DATA_${entry.property().getName()}, ${entry.value()?is_string?then("\"" + entry.value() + "\"", entry.value())});
+		    </#list>
+		</#if>
 	}
 
 	public void setTexture(String texture) {
@@ -348,29 +364,29 @@ public class ${name}Entity extends ${extendsClass} <#if data.ranged>implements R
    	}
 	</#if>
 
-   	<#if data.livingSound?has_content>
-	@Override public SoundEvent getAmbientSound() {
-		return ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("${data.livingSound.getUnmappedValue()}"));
-	}
-	</#if>
+    <#if data.livingSound?has_content && data.livingSound.getUnmappedValue()?has_content>
+ 	@Override public SoundEvent getAmbientSound() {
+ 		return ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("${data.livingSound}"));
+ 	}
+ 	</#if>
 
-   	<#if data.stepSound?has_content>
-	@Override public void playStepSound(BlockPos pos, BlockState blockIn) {
-		this.playSound(ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("${data.stepSound.getUnmappedValue()}")), 0.15f, 1);
-	}
-	</#if>
+    <#if data.stepSound?has_content && data.stepSound.getUnmappedValue()?has_content>
+ 	@Override public void playStepSound(BlockPos pos, BlockState blockIn) {
+ 		this.playSound(ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("${data.stepSound}")), 0.15f, 1);
+ 	}
+ 	</#if>
 
-	<#if data.hurtSound?has_content>
-	@Override public SoundEvent getHurtSound(DamageSource ds) {
-		return ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("${data.hurtSound.getUnmappedValue()}"));
-	}
-	</#if>
+ 	<#if data.hurtSound?has_content && data.hurtSound.getUnmappedValue()?has_content>
+ 	@Override public SoundEvent getHurtSound(DamageSource ds) {
+ 		return ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("${data.hurtSound}"));
+ 	}
+ 	</#if>
 
-	<#if data.deathSound?has_content>
-	@Override public SoundEvent getDeathSound() {
-		return ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("${data.deathSound.getUnmappedValue()}"));
-	}
-	</#if>
+ 	<#if data.deathSound?has_content && data.deathSound.getUnmappedValue()?has_content>
+ 	@Override public SoundEvent getDeathSound() {
+ 		return ForgeRegistries.SOUND_EVENTS.getValue(new ResourceLocation("${data.deathSound}"));
+ 	}
+ 	</#if>
 
 	<#if hasProcedure(data.onStruckByLightning)>
 	@Override public void thunderHit(ServerLevel serverWorld, LightningBolt lightningBolt) {
@@ -532,19 +548,49 @@ public class ${name}Entity extends ${extendsClass} <#if data.ranged>implements R
 			}
 		}
 	}
+	</#if>
 
 	@Override public void addAdditionalSaveData(CompoundTag compound) {
     	super.addAdditionalSaveData(compound);
-		compound.put("InventoryCustom", inventory.serializeNBT());
+    	<#if data.guiBoundTo?has_content && data.guiBoundTo != "<NONE>">
+		    compound.put("InventoryCustom", inventory.serializeNBT());
+		</#if>
+		compound.putString("Texture", this.getTexture());
+		<#if data.entityDataEntries?has_content>
+		    <#list data.entityDataEntries as entry>
+			    <#if entry.value().getClass().getSimpleName() == "Integer">
+			    compound.putInt("Data${entry.property().getName()}", this.entityData.get(DATA_${entry.property().getName()}));
+			    <#elseif entry.value().getClass().getSimpleName() == "Boolean">
+			    compound.putBoolean("Data${entry.property().getName()}", this.entityData.get(DATA_${entry.property().getName()}));
+			    <#elseif entry.value().getClass().getSimpleName() == "String">
+			    compound.putString("Data${entry.property().getName()}", this.entityData.get(DATA_${entry.property().getName()}));
+			    </#if>
+		    </#list>
+		</#if>
 	}
 
 	@Override public void readAdditionalSaveData(CompoundTag compound) {
     	super.readAdditionalSaveData(compound);
-		Tag inventoryCustom = compound.get("InventoryCustom");
-		if(inventoryCustom instanceof CompoundTag inventoryTag)
-			inventory.deserializeNBT(inventoryTag);
+    	<#if data.guiBoundTo?has_content && data.guiBoundTo != "<NONE>">
+		    Tag inventoryCustom = compound.get("InventoryCustom");
+		    if(inventoryCustom instanceof CompoundTag inventoryTag)
+			    inventory.deserializeNBT(inventoryTag);
+		</#if>
+		if (compound.contains("Texture"))
+		    this.setTexture(compound.getString("Texture"));
+		<#if data.entityDataEntries?has_content>
+		    <#list data.entityDataEntries as entry>
+			    if (compound.contains("Data${entry.property().getName()}"))
+				    <#if entry.value().getClass().getSimpleName() == "Integer">
+				    this.entityData.set(DATA_${entry.property().getName()}, compound.getInt("Data${entry.property().getName()}"));
+				    <#elseif entry.value().getClass().getSimpleName() == "Boolean">
+				    this.entityData.set(DATA_${entry.property().getName()}, compound.getBoolean("Data${entry.property().getName()}"));
+				    <#elseif entry.value().getClass().getSimpleName() == "String">
+				    this.entityData.set(DATA_${entry.property().getName()}, compound.getString("Data${entry.property().getName()}"));
+				    </#if>
+		    </#list>
+		</#if>
     }
-    </#if>
 
 	<#if hasProcedure(data.onRightClickedOn) || data.ridable || (data.tameable && data.breedable) || (data.guiBoundTo?has_content && data.guiBoundTo != "<NONE>")>
 	@Override public InteractionResult mobInteract(Player sourceentity, InteractionHand hand) {
@@ -1045,39 +1091,14 @@ public class ${name}Entity extends ${extendsClass} <#if data.ranged>implements R
 	</#if>
 
 	private PlayState procedurePredicate(AnimationState event) {
-		Entity entity = this;
-		Level world = entity.level();
-		boolean loop = false;
-		double x = entity.getX();
-		double y = entity.getY();
-		double z = entity.getZ();
-	<#if hasProcedure(data.conditionalAnimation)>
-		String condition = <@procedureOBJToConditionCode data.conditionalAnimation/>;
-		if (!condition.equals("empty"))
-			this.animationprocedure = condition;
-	</#if>
-	<#if hasProcedure(data.loop)>
-		loop = <@procedureOBJToConditionCode data.loop/>;
-	</#if>
-	if (!loop && this.lastloop) {
-		this.lastloop = false;
+		if (!animationprocedure.equals("empty") && event.getController().getAnimationState() == AnimationController.State.STOPPED) {
 			event.getController().setAnimation(RawAnimation.begin().thenPlay(this.animationprocedure));
-			event.getController().forceAnimationReset();
-
-		return PlayState.STOP;
-	}
-		if (!this.animationprocedure.equals("empty") && event.getController().getAnimationState() == AnimationController.State.STOPPED) {
-		if (!loop) {
-			event.getController().setAnimation(RawAnimation.begin().thenPlay(this.animationprocedure));
-	        if (event.getController().getAnimationState() == AnimationController.State.STOPPED) {
-			this.animationprocedure = "empty";
-			event.getController().forceAnimationReset();
-				}
+			if (event.getController().getAnimationState() == AnimationController.State.STOPPED) {
+				this.animationprocedure = "empty";
+				event.getController().forceAnimationReset();
 			}
-		else {
- 			event.getController().setAnimation(RawAnimation.begin().thenLoop(this.animationprocedure));
-			this.lastloop = true;
-			}
+		} else if (animationprocedure.equals("empty")) {
+			return PlayState.STOP;
 		}
 		return PlayState.CONTINUE;
 	}
