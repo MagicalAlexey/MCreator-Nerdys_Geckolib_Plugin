@@ -29,6 +29,7 @@
 -->
 
 <#-- @formatter:off -->
+<#include "../procedures.java.ftl">
 
 /*
  *    MCreator note: This file will be REGENERATED on each build.
@@ -115,6 +116,9 @@ public class ${JavaModName}Items {
 				REGISTRY.register("${item.getModElement().getRegistryName()}", () -> new ${item.getModElement().getName()}Item());
 		</#if>
 	</#list>
+
+	// Start of user code block custom items
+	// End of user code block custom items
 
 	<#if hasBlocks>
 	private static RegistryObject<Item> block(RegistryObject<Block> block, CreativeModeTab tab) {
